@@ -1,0 +1,17 @@
+Initial config:
+ -----
+|. % .|2
+|% . .|0
+|. % .|1
+ -----
+ 2 0 1
+
+Elapsed time: 0.001 seconds.
+Number of configs generated: 68
+Solution:
+ -----
+|^ % ^|2
+|% - -|0
+|^ % -|1
+ -----
+ 2 0 1

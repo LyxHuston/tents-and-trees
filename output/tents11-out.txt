@@ -1,0 +1,12 @@
+Initial config:
+ -------
+|% . . .|0
+|. . . .|0
+|. . . .|0
+|. . % .|2
+ -------
+ 0 1 0 1
+
+Elapsed time: 0.0 seconds.
+Number of configs generated: 115
+No solution!

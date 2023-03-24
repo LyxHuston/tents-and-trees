@@ -1,0 +1,142 @@
+Initial config:
+ ---
+|. %|1
+|. .|0
+ ---
+ 1 0
+
+Backtracker debugging enabled...
+Current config:
+ ---
+|. %|1
+|. .|0
+ ---
+ 1 0
+
+Valid successor:
+ ---
+|- %|1
+|. .|0
+ ---
+ 1 0
+
+Current config:
+ ---
+|- %|1
+|. .|0
+ ---
+ 1 0
+
+Valid successor:
+ ---
+|- %|1
+|. .|0
+ ---
+ 1 0
+
+Current config:
+ ---
+|- %|1
+|. .|0
+ ---
+ 1 0
+
+Valid successor:
+ ---
+|- %|1
+|- .|0
+ ---
+ 1 0
+
+Current config:
+ ---
+|- %|1
+|- .|0
+ ---
+ 1 0
+
+	Invalid successor:
+ ---
+|- %|1
+|- -|0
+ ---
+ 1 0
+
+	Invalid successor:
+ ---
+|- %|1
+|- ^|0
+ ---
+ 1 0
+
+	Invalid successor:
+ ---
+|- %|1
+|^ .|0
+ ---
+ 1 0
+
+Valid successor:
+ ---
+|^ %|1
+|. .|0
+ ---
+ 1 0
+
+Current config:
+ ---
+|^ %|1
+|. .|0
+ ---
+ 1 0
+
+Valid successor:
+ ---
+|^ %|1
+|. .|0
+ ---
+ 1 0
+
+Current config:
+ ---
+|^ %|1
+|. .|0
+ ---
+ 1 0
+
+Valid successor:
+ ---
+|^ %|1
+|- .|0
+ ---
+ 1 0
+
+Current config:
+ ---
+|^ %|1
+|- .|0
+ ---
+ 1 0
+
+Valid successor:
+ ---
+|^ %|1
+|- -|0
+ ---
+ 1 0
+
+Current config:
+ ---
+|^ %|1
+|- -|0
+ ---
+ 1 0
+
+Elapsed time: 0.005 seconds.
+Number of configs generated: 13
+Solution:
+ ---
+|^ %|1
+|- -|0
+ ---
+ 1 0
