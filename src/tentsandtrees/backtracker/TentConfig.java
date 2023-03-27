@@ -12,13 +12,21 @@ import java.util.ArrayList;
  *  Configuration methods necessary for the Backtracker solver.
  *
  *  @author RIT CS
- *  @author YOUR NAME HERE
+ *  @author Lyx Huston
  */
 public class TentConfig implements Configuration, ITentsAndTreesTest {
     /** square dimension of field */
-    private static int DIM;
-
-    // TODO
+    private final int DIM;
+    /** character representation of board */
+    private final char[][] board;
+    /** number of tents per row */
+    private final int[] tentsPerRow;
+    /** number of tents per column */
+    private final int[] tentsPerColumn;
+    /** where looking at column */
+    private int cursorCol;
+    /** where looking at row */
+    private int cursorRow;
 
     /**
      * Construct the initial configuration from an input file whose contents
@@ -37,10 +45,28 @@ public class TentConfig implements Configuration, ITentsAndTreesTest {
     public TentConfig(String filename) throws IOException {
         try (BufferedReader in = new BufferedReader(new FileReader(filename))) {
             // get the field dimension
-            DIM = Integer.parseInt(in.readLine());
+            this.DIM = Integer.parseInt(in.readLine());
 
-            // TODO
-
+            String[] rowStore = in.readLine().split("\\s+");
+            this.tentsPerRow = new int[this.DIM];
+            for (int i = 0; i < this.DIM; i++) {
+                this.tentsPerRow[i] = Integer.parseInt(rowStore[i]);
+            }
+            rowStore = in.readLine().split("\\s+");
+            this.tentsPerColumn = new int[this.DIM];
+            for (int i = 0; i < this.DIM; i++) {
+                this.tentsPerColumn[i] = Integer.parseInt(rowStore[i]);
+            }
+            String[] stringBoard;
+            this.board = new char[this.DIM][this.DIM];
+            for (int row = 0; row < this.DIM; row++) {
+                stringBoard = in.readLine().split("\\s+");
+                for (int col = 0; col < this.DIM; col++) {
+                    this.board[row][col] = stringBoard[col].charAt(0);
+                }
+            }
+        this.cursorCol = -1;
+        this.cursorRow = 0;
         } // <3 Jim
     }
 
@@ -50,13 +76,41 @@ public class TentConfig implements Configuration, ITentsAndTreesTest {
      * @param other the config to copy
      */
     private TentConfig(TentConfig other) {
-        // TODO
+        this.DIM = other.DIM;
+        this.tentsPerColumn = other.tentsPerColumn;
+        this.tentsPerRow = other.tentsPerRow;
+        this.board = other.board.clone();
+        for (int i = 0; i < this.DIM; ++i) {
+            this.board[i] = this.board[i].clone();
+        }
     }
 
     @Override
     public Collection<Configuration> getSuccessors() {
-        // TODO
-        return new ArrayList<>();
+        int col = this.cursorCol + 1;
+        int row = this.cursorRow;
+        if (col == this.DIM) {
+            row++;
+            col = 0;
+        }
+        if (this.board[row][col] == '%') {
+            TentConfig clone = new TentConfig(this);
+            clone.cursorCol = col;
+            clone.cursorRow = row;
+            return new ArrayList<>() {{add(clone);}};
+        }
+        ArrayList<Configuration> successors = new ArrayList<>();
+        TentConfig grass = new TentConfig(this);
+        grass.cursorCol = col;
+        grass.cursorRow = row;
+        grass.board[row][col] = GRASS;
+        TentConfig tent = new TentConfig(this);
+        tent.cursorCol = col;
+        tent.cursorRow = row;
+        tent.board[row][col] = TENT;
+        successors.add(grass);
+        successors.add(tent);
+        return successors;
     }
 
     @Override
@@ -79,37 +133,31 @@ public class TentConfig implements Configuration, ITentsAndTreesTest {
 
     @Override
     public int getDIM() {
-        // TODO
-        return 0;
+        return this.DIM;
     }
 
     @Override
     public int getTentsRow(int row) {
-        // TODO
-        return 0;
+        return this.tentsPerRow[row];
     }
 
     @Override
     public int getTentsCol(int col) {
-        // TODO
-        return 0;
+        return this.tentsPerColumn[col];
     }
 
     @Override
     public char getCell(int row, int col) {
-        // TODO
-        return 0;
+        return this.board[row][col];
     }
 
     @Override
     public int getCursorRow() {
-        // TODO
-        return 0;
+        return this.cursorRow;
     }
 
     @Override
     public int getCursorCol() {
-        // TODO
-        return 0;
+        return this.cursorCol;
     }
 }
