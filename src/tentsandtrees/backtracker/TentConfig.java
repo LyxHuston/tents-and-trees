@@ -15,18 +15,32 @@ import java.util.ArrayList;
  *  @author Lyx Huston
  */
 public class TentConfig implements Configuration, ITentsAndTreesTest {
+
+    /**
+     * @param next tree that comes after this one in the search
+     * @param col  x (column) value of tree
+     * @param row  y (row) value of tree
+     */
+    private record TreeNode(int col, int row, TentConfig.TreeNode next) {
+    }
     /** square dimension of field */
-    private final int DIM;
+    private static int DIM;
     /** character representation of board */
     private final char[][] board;
     /** number of tents per row */
-    private final int[] tentsPerRow;
+    private static int[] tentsPerRow;
     /** number of tents per column */
-    private final int[] tentsPerColumn;
-    /** where looking at column */
-    private int cursorCol;
-    /** where looking at row */
-    private int cursorRow;
+    private static int[] tentsPerColumn;
+    /** check against number of tents per row */
+    private final int[] checkTentsPerRow;
+    /** check against number of tents per column */
+    private final int[] checkTentsPerColumn;
+    /** tree placing around */
+    private TreeNode treeOn;
+    /** direction to column change look array */
+    private static final int[] dirToCol = {0, 1, 1, 1, 0, -1, -1, -1};
+    /** direction to row change look array */
+    private static final int[] dirToRow = {1, 1, 0, -1, -1, -1, 0, 1};
 
     /**
      * Construct the initial configuration from an input file whose contents
@@ -43,30 +57,34 @@ public class TentConfig implements Configuration, ITentsAndTreesTest {
      * @throws IOException if the file is not found or there are errors reading
      */
     public TentConfig(String filename) throws IOException {
+        this.treeOn = null;
         try (BufferedReader in = new BufferedReader(new FileReader(filename))) {
             // get the field dimension
-            this.DIM = Integer.parseInt(in.readLine());
+            DIM = Integer.parseInt(in.readLine());
 
             String[] rowStore = in.readLine().split("\\s+");
-            this.tentsPerRow = new int[this.DIM];
-            for (int i = 0; i < this.DIM; i++) {
-                this.tentsPerRow[i] = Integer.parseInt(rowStore[i]);
+            tentsPerRow = new int[DIM];
+            for (int i = 0; i < DIM; i++) {
+                tentsPerRow[i] = Integer.parseInt(rowStore[i]);
             }
             rowStore = in.readLine().split("\\s+");
-            this.tentsPerColumn = new int[this.DIM];
-            for (int i = 0; i < this.DIM; i++) {
-                this.tentsPerColumn[i] = Integer.parseInt(rowStore[i]);
+            tentsPerColumn = new int[DIM];
+            for (int i = 0; i < DIM; i++) {
+                tentsPerColumn[i] = Integer.parseInt(rowStore[i]);
             }
+            this.checkTentsPerColumn = tentsPerColumn.clone();
+            this.checkTentsPerRow = tentsPerRow.clone();
             String[] stringBoard;
-            this.board = new char[this.DIM][this.DIM];
-            for (int row = 0; row < this.DIM; row++) {
+            this.board = new char[DIM][DIM];
+            for (int row = 0; row < DIM; row++) {
                 stringBoard = in.readLine().split("\\s+");
-                for (int col = 0; col < this.DIM; col++) {
+                for (int col = 0; col < DIM; col++) {
                     this.board[row][col] = stringBoard[col].charAt(0);
+                    if (stringBoard[col].charAt(0) == TREE) {
+                        this.treeOn = new TreeNode(col, row, this.treeOn);
+                    }
                 }
             }
-        this.cursorCol = -1;
-        this.cursorRow = 0;
         } // <3 Jim
     }
 
@@ -76,53 +94,161 @@ public class TentConfig implements Configuration, ITentsAndTreesTest {
      * @param other the config to copy
      */
     private TentConfig(TentConfig other) {
-        this.DIM = other.DIM;
-        this.tentsPerColumn = other.tentsPerColumn;
-        this.tentsPerRow = other.tentsPerRow;
-        this.board = other.board.clone();
-        for (int i = 0; i < this.DIM; ++i) {
-            this.board[i] = this.board[i].clone();
+        this.checkTentsPerColumn = new int[DIM];
+        this.checkTentsPerRow = new int[DIM];
+        System.arraycopy(other.checkTentsPerColumn, 0, this.checkTentsPerColumn, 0, DIM);
+        System.arraycopy(other.checkTentsPerRow, 0, this.checkTentsPerRow, 0, DIM);
+        this.board = new char[DIM][DIM];
+        //System.arraycopy(other.board, 0, this.board, 0, DIM);
+        for (int i = 0; i < DIM; ++i) {
+            System.arraycopy(other.board[i], 0, this.board[i], 0, DIM);
         }
+        this.treeOn = other.treeOn.next;
     }
 
+    /**
+     * gets successors looking in all possible directions
+     * @return arraylist of successors in all possible directions
+     */
     @Override
     public Collection<Configuration> getSuccessors() {
-        int col = this.cursorCol + 1;
-        int row = this.cursorRow;
-        if (col == this.DIM) {
-            row++;
-            col = 0;
-        }
-        if (this.board[row][col] == '%') {
-            TentConfig clone = new TentConfig(this);
-            clone.cursorCol = col;
-            clone.cursorRow = row;
-            return new ArrayList<>() {{add(clone);}};
-        }
-        ArrayList<Configuration> successors = new ArrayList<>();
-        TentConfig grass = new TentConfig(this);
-        grass.cursorCol = col;
-        grass.cursorRow = row;
-        grass.board[row][col] = GRASS;
-        TentConfig tent = new TentConfig(this);
-        tent.cursorCol = col;
-        tent.cursorRow = row;
-        tent.board[row][col] = TENT;
-        successors.add(grass);
-        successors.add(tent);
-        return successors;
+        return this.getSuccessors(0, 4);
     }
 
+    /**
+     * gets successors looking in a range of directions.
+     * if it's the last tree, it returns itself
+     * 0 is up, 3 if left
+     * @param start start looking direction
+     * @param finish finish looking direction
+     * @return an arraylist with the successors
+     */
+    public Collection<Configuration> getSuccessors(int start, int finish) {
+        ArrayList<Configuration> results = new ArrayList<>();
+        if (this.treeOn == null) {
+            results.add(this);
+            return results;
+        }
+        for (int direction = start; direction < finish; direction++) {
+            TentConfig successor = this.getSuccessor(direction);
+            if (successor != null){
+                results.add(successor);
+            }
+        }
+        return results;
+    }
+
+    /**
+     * gets a successor looking in a singular direction
+     * only works with 0 to 3
+     * @param direction direction looking in
+     * @return new tentconfig
+     */
+    public TentConfig getSuccessor(int direction) {
+        int lookRow = this.treeOn.row + dirToRow[direction * 2];
+        int lookCol = this.treeOn.col + dirToCol[direction * 2];
+        /* check to make sure it's ok to place there */
+        if (!this.validPlace(lookRow, lookCol)) {
+            return null;
+        }
+        TentConfig result = new TentConfig(this);
+        result.board[lookRow][lookCol] = TENT;
+        result.checkTentsPerRow[lookRow] -= 1;
+        result.checkTentsPerColumn[lookCol] -= 1;
+        return result;
+    }
+
+    /**
+     * all checking offloaded on validPlace (because I decided why generate it
+     * if I can check if it will be valid anyways)
+     * @return always true (if the successor was made it will be valid)
+     */
     @Override
     public boolean isValid() {
-        // TODO
         return true;
+    }
+
+    /**
+     * handles most of the validity checking, makes sure it's ok to place a
+     * tent in a certain row and column
+     * @param row row to place in
+     * @param col column to place in
+     * @return checks if it's ok to place a tent there
+     */
+    public boolean validPlace(int row, int col) {
+        /* check if inside the board */
+        if (0 > row || DIM <= row) {
+            return false;
+        }
+        if (0 > col || DIM <= col) {
+            return false;
+        }
+        /* check if place is empty */
+        if (this.board[row][col] != EMPTY) {
+            return false;
+        }
+        /* checks against column and row requirements*/
+        if (this.checkTentsPerRow[row] <= 0 || this.checkTentsPerColumn[col] <= 0) {
+            return false;
+        }
+        /* check to make sure it's not next to tents */
+        for (int direction = 0; direction < 8; direction++) {
+            if (isTent(
+                    row + dirToRow[direction],
+                    col + dirToCol[direction])
+            ) {
+                return false;
+            }
+        }
+        /* if passes all checks, returns true */
+        return true;
+    }
+
+    /**
+     * checks if a certain place is a tent, returns false if out of range
+     * (because not tent)
+     * @param row row looking at
+     * @param col column looking at
+     * @return if the cell is a tent
+     */
+    public boolean isTent(int row, int col) {
+        /* check if inside the board */
+        if (0 > row || DIM <= row) {
+            return false;
+        }
+        if (0 > col || DIM <= col) {
+            return false;
+        }
+        /* then returns if character is tent */
+        return this.board[row][col] == '^';
     }
 
     @Override
     public boolean isGoal() {
-        // TODO
-        return false;
+        /* check that last tree has received a tent */
+        if (this.treeOn != null) {
+            return false;
+        }
+        /* check that all rows and columns have received correct amount
+        *
+        * during placing, it ticks them down.  If each place of the check arrays
+        * have 0, then it placed the correct amount in each row and column
+        * */
+        for (int i = 0; i < DIM; i++) {
+            if (this.checkTentsPerRow[i] != 0 ||
+                    this.checkTentsPerColumn[i] != 0) {
+                return false;
+            }
+        }
+        /* changes empty to grass */
+        for (int row = 0; row < DIM; row++) {
+            for (int col = 0; col < DIM; col++) {
+                if (this.board[row][col] == EMPTY) {
+                    this.board[row][col] = GRASS;
+                }
+            }
+        }
+        return true;
     }
 
     @Override
@@ -133,17 +259,17 @@ public class TentConfig implements Configuration, ITentsAndTreesTest {
 
     @Override
     public int getDIM() {
-        return this.DIM;
+        return DIM;
     }
 
     @Override
     public int getTentsRow(int row) {
-        return this.tentsPerRow[row];
+        return tentsPerRow[row];
     }
 
     @Override
     public int getTentsCol(int col) {
-        return this.tentsPerColumn[col];
+        return tentsPerColumn[col];
     }
 
     @Override
@@ -153,11 +279,11 @@ public class TentConfig implements Configuration, ITentsAndTreesTest {
 
     @Override
     public int getCursorRow() {
-        return this.cursorRow;
+        return this.treeOn.row;
     }
 
     @Override
     public int getCursorCol() {
-        return this.cursorCol;
+        return this.treeOn.col;
     }
 }
