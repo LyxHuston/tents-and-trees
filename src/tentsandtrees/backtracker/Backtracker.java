@@ -8,6 +8,7 @@ import java.util.Optional;
  * It has a solver that can take a valid configuration and return a
  * solution, if one exists.
  *
+ * @author Lyx Husont
  * @author RIT CS
  */
 public class Backtracker {
@@ -26,7 +27,8 @@ public class Backtracker {
         if (this.debug) {
             System.out.println("Backtracker debugging enabled...");
         }
-        this.configCount = 1;  // counts the initial config sent to solve()
+        this.configCount = 0;
+        // changed because the initial config will be counted in solve()
     }
 
     /**
@@ -44,26 +46,31 @@ public class Backtracker {
 
     /**
      * Try find a solution, if one exists, for a given configuration.
+     * <p>
+     * changes made:
+     * offloaded increasing configcount to when the function is called, by 1,
+     * due to the fact that configurations are being generated as needed, not
+     * prior in a batch.  There was no negligible way to compute which
+     * successors would be valid prior to reaching them, so I didn't. It ends up
+     * that configcount is only updated one time more than prior.
+     * <p>
+     * Also, due to changes made in TentConfig, uses the config itself as an
+     * iterable.
      *
      * @param config A valid configuration
      * @return A solution config, or null if no solution
      */
     public Optional<Configuration> solve(Configuration config) {
+        configCount++;
         debugPrint("Current config", config);
         if (config.isGoal()) {
             return Optional.of(config);
         } else {
-            Collection<Configuration> successors = config.getSuccessors();
-            configCount += successors.size();
-            for (Configuration child : successors) {
-                if (child.isValid()) {
-                    debugPrint("Valid successor", child);
-                    Optional<Configuration> sol = solve(child);
-                    if (sol.isPresent()) {
-                        return sol;
-                    }
-                } else {
-                    debugPrint("\tInvalid successor", child);
+            for (TentConfig child : (TentConfig) config) {
+                debugPrint("Valid successor", child);
+                Optional<Configuration> sol = solve(child);
+                if (sol.isPresent()) {
+                    return sol;
                 }
             }
             // implicit backtracking happens here

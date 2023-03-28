@@ -14,7 +14,7 @@ import java.util.Iterator;
  *  @author RIT CS
  *  @author Lyx Huston
  */
-public class TentConfig implements Configuration, ITentsAndTreesTest, Collection<Configuration>, Iterator<Configuration> {
+public class TentConfig implements Configuration, ITentsAndTreesTest, Collection<TentConfig>, Iterator<TentConfig> {
 
     /*
      * most of these are here only so that it is recognizable as a collection
@@ -48,7 +48,7 @@ public class TentConfig implements Configuration, ITentsAndTreesTest, Collection
      * @return iterator (itself)
      */
     @Override
-    public Iterator<Configuration> iterator() {
+    public Iterator<TentConfig> iterator() {
         return this;
     }
 
@@ -63,9 +63,10 @@ public class TentConfig implements Configuration, ITentsAndTreesTest, Collection
     }
 
     @Override
-    public boolean add(Configuration configuration) {
+    public boolean add(TentConfig tentConfig) {
         return false;
     }
+
 
     @Override
     public boolean remove(Object o) {
@@ -78,7 +79,7 @@ public class TentConfig implements Configuration, ITentsAndTreesTest, Collection
     }
 
     @Override
-    public boolean addAll(Collection<? extends Configuration> c) {
+    public boolean addAll(Collection<? extends TentConfig> c) {
         return false;
     }
 
@@ -123,7 +124,7 @@ public class TentConfig implements Configuration, ITentsAndTreesTest, Collection
     }
 
     /**
-     * gets the valid successor
+     * gets the valid successor, given that the direction would be valid
      * @return a valid successor
      */
     @Override
@@ -212,12 +213,15 @@ public class TentConfig implements Configuration, ITentsAndTreesTest, Collection
     private TentConfig(TentConfig other) {
         this.checkTentsPerColumn = new int[DIM];
         this.checkTentsPerRow = new int[DIM];
-        System.arraycopy(other.checkTentsPerColumn, 0, this.checkTentsPerColumn, 0, DIM);
-        System.arraycopy(other.checkTentsPerRow, 0, this.checkTentsPerRow, 0, DIM);
+        System.arraycopy(other.checkTentsPerColumn, 0,
+                this.checkTentsPerColumn, 0, DIM);
+        System.arraycopy(other.checkTentsPerRow, 0,
+                this.checkTentsPerRow, 0, DIM);
         this.board = new char[DIM][DIM];
         //System.arraycopy(other.board, 0, this.board, 0, DIM);
         for (int i = 0; i < DIM; ++i) {
-            System.arraycopy(other.board[i], 0, this.board[i], 0, DIM);
+            System.arraycopy(other.board[i], 0, this.board[i],
+                    0, DIM);
         }
         this.treeOn = other.treeOn.next;
     }
@@ -238,7 +242,7 @@ public class TentConfig implements Configuration, ITentsAndTreesTest, Collection
      */
     @Override
     public Collection<Configuration> getSuccessors() {
-        return this;
+        return null;
     }
 
     /**
@@ -299,7 +303,8 @@ public class TentConfig implements Configuration, ITentsAndTreesTest, Collection
             return false;
         }
         /* checks against column and row requirements*/
-        if (this.checkTentsPerRow[row] <= 0 || this.checkTentsPerColumn[col] <= 0) {
+        if (this.checkTentsPerRow[row] <= 0 || this.checkTentsPerColumn[col] <=
+                0) {
             return false;
         }
         /* check to make sure it's not next to tents */
@@ -342,8 +347,9 @@ public class TentConfig implements Configuration, ITentsAndTreesTest, Collection
         }
         /* check that all rows and columns have received correct amount
          *
-         * during placing, it ticks them down.  If each place of the check arrays
-         * have 0, then it placed the correct amount in each row and column
+         * during placing it ticks them down.  If each place of the check
+         * arrays have 0, then it placed the correct amount in each row and
+         * column
          * */
         for (int i = 0; i < DIM; i++) {
             if (this.checkTentsPerRow[i] != 0 ||
@@ -351,7 +357,7 @@ public class TentConfig implements Configuration, ITentsAndTreesTest, Collection
                 return false;
             }
         }
-        /* changes empty to grass */
+        /* changes empty to grass. */
         for (int row = 0; row < DIM; row++) {
             for (int col = 0; col < DIM; col++) {
                 if (this.board[row][col] == EMPTY) {
