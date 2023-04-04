@@ -3,6 +3,7 @@ package tentsandtrees.backtracker;
 import tentsandtrees.test.ITentsAndTreesTest;
 
 import java.io.*;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -14,98 +15,103 @@ import java.util.Iterator;
  *  @author RIT CS
  *  @author Lyx Huston
  */
-public class TentConfig implements Configuration, ITentsAndTreesTest, Collection<TentConfig>, Iterator<TentConfig> {
+public class TentConfig implements Configuration, ITentsAndTreesTest, Iterator<TentConfig> {
 
-    /*
-     * most of these are here only so that it is recognizable as a collection
-     * and iterator.  Otherwise, not used, or intended to be.
-     */
-
-    /**
-     * this goes maximum possible, over-inflating the total number of
-     * configurations actually generated
-     * to get an accurate number, replace where it increases config count by
-     * size with increase by 1.
-     * @return 4
-     */
-    @Override
-    public int size() {
-        return 4;
-    }
-
-    @Override
-    public boolean isEmpty() {
-        return this.on == 4;
-    }
-
-    @Override
-    public boolean contains(Object o) {
-        return false;
-    }
-
-    /**
-     * returns iterator (itself)
-     * @return iterator (itself)
-     */
-    @Override
-    public Iterator<TentConfig> iterator() {
-        return this;
-    }
-
-    @Override
-    public Object[] toArray() {
-        return new Object[0];
-    }
-
-    @Override
-    public <T> T[] toArray(T[] a) {
-        return null;
-    }
-
-    @Override
-    public boolean add(TentConfig tentConfig) {
-        return false;
-    }
-
-
-    @Override
-    public boolean remove(Object o) {
-        return false;
-    }
-
-    @Override
-    public boolean containsAll(Collection<?> c) {
-        return false;
-    }
-
-    @Override
-    public boolean addAll(Collection<? extends TentConfig> c) {
-        return false;
-    }
-
-    @Override
-    public boolean removeAll(Collection<?> c) {
-        return false;
-    }
-
-    @Override
-    public boolean retainAll(Collection<?> c) {
-        return false;
-    }
-
-    @Override
-    public void clear() {
-        this.on = -1;
-    }
-
-    /* end of stubs or negligibles */
+//    /*
+//     * most of these are here only so that it is recognizable as a collection
+//     * and iterator.  Otherwise, not used, or intended to be.
+//     */
+//
+//    /**
+//     * this goes maximum possible, over-inflating the total number of
+//     * configurations actually generated
+//     * to get an accurate number, replace where it increases config count by
+//     * size with increase by 1.
+//     * @return 4
+//     */
+//    @Override
+//    public int size() {
+//        return 4;
+//    }
+//
+//    @Override
+//    public boolean isEmpty() {
+//        return this.on == 4;
+//    }
+//
+//    @Override
+//    public boolean contains(Object o) {
+//        return false;
+//    }
+//
+//    /**
+//     * returns iterator (itself)
+//     * @return iterator (itself)
+//     */
+//    @Override
+//    public Iterator<TentConfig> iterator() {
+//        return this;
+//    }
+//
+//    @Override
+//    public Object[] toArray() {
+//        return new Object[0];
+//    }
+//
+//    @Override
+//    public <T> T[] toArray(T[] a) {
+//        return null;
+//    }
+//
+//    @Override
+//    public boolean add(TentConfig tentConfig) {
+//        return false;
+//    }
+//
+//
+//    @Override
+//    public boolean remove(Object o) {
+//        return false;
+//    }
+//
+//    @Override
+//    public boolean containsAll(Collection<?> c) {
+//        return false;
+//    }
+//
+//    @Override
+//    public boolean addAll(Collection<? extends TentConfig> c) {
+//        return false;
+//    }
+//
+//    @Override
+//    public boolean removeAll(Collection<?> c) {
+//        return false;
+//    }
+//
+//    @Override
+//    public boolean retainAll(Collection<?> c) {
+//        return false;
+//    }
+//
+//    @Override
+//    public void clear() {
+//        this.on = -1;
+//    }
+//
+//    /* end of stubs or negligibles */
 
     /** direction to look at from the tree */
-    private int on = -1;
+    private int on = 0;
+    /** how much to step when turning.  Changed to 2 if locked on a column/row,
+     * 4 if single direction
+     */
+    private int step = 1;
 
     /**
      * going around the tree (on = direction) looks at if a valid configuration
-     * could be made in that direction.  If it would get back to up (4) it stops
+     * could be made in that direction.  If it would complete a rotation (>=4)
+     * it stops.
      * Also sets the on value to what would be a valid configuration to make.
      * @return true if there is a valid configuration that can be made past what
      * has already been
@@ -115,11 +121,14 @@ public class TentConfig implements Configuration, ITentsAndTreesTest, Collection
         if (this.treeOn == null) {
             return false;
         }
-        while (++on < 4) {
-            if (this.validPlace(on)) {
+        while (this.on < 4) {
+            //System.out.println("Step: " + this.step + " on " + this.on);
+            if (this.validPlace(this.on)) {
                 return true;
             }
+            this.on += this.step;
         }
+        //System.out.println("No more valid successors");
         return false;
     }
 
@@ -129,7 +138,8 @@ public class TentConfig implements Configuration, ITentsAndTreesTest, Collection
      */
     @Override
     public TentConfig next() {
-        return this.getSuccessor(on);
+        this.on += this.step;
+        return this.getSuccessor(this.on - this.step);
     }
 
     /**
@@ -152,12 +162,19 @@ public class TentConfig implements Configuration, ITentsAndTreesTest, Collection
     private final int[] checkTentsPerRow;
     /** check against number of tents per column */
     private final int[] checkTentsPerColumn;
+    /** the maximum number of tents that can be placed in a given row after
+     * current config */
+    private final int[] maxTentsPerRow;
+    /** the maximum number of tents that can be placed in a given column after
+     * current config */
+    private final int[] maxTentsPerColumn;
     /** tree placing around */
     private TreeNode treeOn;
     /** direction to column change look array */
     private static final int[] dirToCol = {0, 1, 1, 1, 0, -1, -1, -1};
     /** direction to row change look array */
     private static final int[] dirToRow = {1, 1, 0, -1, -1, -1, 0, 1};
+    private int dirRecord = 0;
 
     /**
      * Construct the initial configuration from an input file whose contents
@@ -174,6 +191,7 @@ public class TentConfig implements Configuration, ITentsAndTreesTest, Collection
      * @throws IOException if the file is not found or there are errors reading
      */
     public TentConfig(String filename) throws IOException {
+        int trees = 0;
         this.treeOn = null;
         try (BufferedReader in = new BufferedReader(new FileReader(filename))) {
             // get the field dimension
@@ -193,16 +211,96 @@ public class TentConfig implements Configuration, ITentsAndTreesTest, Collection
             this.checkTentsPerRow = tentsPerRow.clone();
             String[] stringBoard;
             this.board = new char[DIM][DIM];
+            this.maxTentsPerRow = new int[DIM];
+            this.maxTentsPerColumn = new int[DIM];
             for (int row = 0; row < DIM; row++) {
                 stringBoard = in.readLine().split("\\s+");
                 for (int col = 0; col < DIM; col++) {
                     this.board[row][col] = stringBoard[col].charAt(0);
                     if (stringBoard[col].charAt(0) == TREE) {
+                        trees++;
                         this.treeOn = new TreeNode(col, row, this.treeOn);
+                        changeMaxRow(row, 1);
+                        changeMaxCol(col, 1);
                     }
                 }
             }
+            if (trees != Arrays.stream(tentsPerColumn).sum() ||
+                    trees != Arrays.stream(tentsPerRow).sum()) {
+                System.out.println("Error in data file: different number of" +
+                "required tents by tree count and row/column count.");
+                this.treeOn = null;
+            }
+            this.skipRequired();
         } // <3 Jim
+    }
+
+    /**
+     * checks if the solver has to place a tent in a given row
+     * @param row row to check
+     * @return if it has to place a thing there
+     */
+    private int checkRequiredRow(int row) {
+        if (row < 0 || row >= DIM) {
+            return 0;
+        }
+        if (this.maxTentsPerRow[row] <= 0 || this.checkTentsPerRow[row] <= 0) {
+            return 0;
+        }
+        if (this.maxTentsPerRow[row] == this.checkTentsPerRow[row]) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    /**
+     * checks if the solver has to place a tent in a given column
+     * @param col column to check
+     * @return if it has to place a thing there
+     */
+    private int checkRequiredColumn(int col) {
+        if (col < 0 || col >= DIM) {
+            return 0;
+        }
+        if (this.maxTentsPerColumn[col] <= 0 || this.checkTentsPerColumn[col] <= 0) {
+            return 0;
+        }
+        if (this.maxTentsPerColumn[col] == this.checkTentsPerColumn[col]) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    /**
+     * changes values in max detector arrays
+     * @param row row centered at
+     * @param value value to change by
+     */
+    private void changeMaxRow(int row, int value) {
+        this.maxTentsPerRow[row] += value;
+        if (row + 1 < DIM) {
+            this.maxTentsPerRow[row + 1] += value;
+        }
+        if (row > 0) {
+            this.maxTentsPerRow[row - 1] += value;
+        }
+    }
+
+    /**
+     * changes values in max detector arrays
+     * @param col column centered at
+     * @param value value to change by
+     */
+    private void changeMaxCol(int col, int value) {
+        this.maxTentsPerColumn[col] += value;
+        if (col + 1 < DIM) {
+            this.maxTentsPerColumn[col + 1] += value;
+        }
+        if (col > 0) {
+            this.maxTentsPerColumn[col - 1] += value;
+        }
     }
 
     /**
@@ -210,20 +308,39 @@ public class TentConfig implements Configuration, ITentsAndTreesTest, Collection
      * of its instance data.
      * @param other the config to copy
      */
-    private TentConfig(TentConfig other) {
+    private TentConfig(TentConfig other, int lookRow, int lookCol) {
         this.checkTentsPerColumn = new int[DIM];
         this.checkTentsPerRow = new int[DIM];
         System.arraycopy(other.checkTentsPerColumn, 0,
                 this.checkTentsPerColumn, 0, DIM);
         System.arraycopy(other.checkTentsPerRow, 0,
                 this.checkTentsPerRow, 0, DIM);
+        this.maxTentsPerColumn = new int[DIM];
+        this.maxTentsPerRow = new int[DIM];
+        System.arraycopy(other.maxTentsPerColumn, 0,
+                this.maxTentsPerColumn, 0, DIM);
+        System.arraycopy(other.maxTentsPerRow, 0,
+                this.maxTentsPerRow, 0, DIM);
         this.board = new char[DIM][DIM];
         //System.arraycopy(other.board, 0, this.board, 0, DIM);
         for (int i = 0; i < DIM; ++i) {
             System.arraycopy(other.board[i], 0, this.board[i],
                     0, DIM);
         }
+
+        this.board[lookRow][lookCol] = TENT;
+        this.checkTentsPerRow[lookRow] -= 1;
+        this.checkTentsPerColumn[lookCol] -= 1;
+        changeMaxRow(other.treeOn.row, -1);
+        changeMaxCol(other.treeOn.col, -1);
+
         this.treeOn = other.treeOn.next;
+        this.skipRequired();
+
+        //System.out.println(this.treeOn);
+        // checks if there's a required direction or place for the tent based on
+        // tree location.  If multiple conflicting, marks as impossible
+
     }
 
     /**
@@ -251,7 +368,8 @@ public class TentConfig implements Configuration, ITentsAndTreesTest, Collection
      * @param direction direction looking in
      * @return new tentconfig
      */
-    public TentConfig getSuccessor(int direction) {
+    private TentConfig getSuccessor(int direction) {
+        this.dirRecord += Math.pow(2, direction);
         int lookRow = this.treeOn.row + dirToRow[direction * 2];
         int lookCol = this.treeOn.col + dirToCol[direction * 2];
         /* check to make sure it's ok to place there (offloaded to inside of
@@ -259,24 +377,118 @@ public class TentConfig implements Configuration, ITentsAndTreesTest, Collection
 //        if (!this.validPlace(lookRow, lookCol)) {
 //            return null;
 //        }
-        TentConfig result = new TentConfig(this);
-        result.board[lookRow][lookCol] = TENT;
-        result.checkTentsPerRow[lookRow] -= 1;
-        result.checkTentsPerColumn[lookCol] -= 1;
-        return result;
+        return new TentConfig(this, lookRow, lookCol);
     }
 
     /**
-     * all checking offloaded on validPlace (because I decided why generate it
+     * most checking offloaded on validPlace (because I decided why generate it
      * if I can check if it will be valid anyways)
-     * @return always true (if the successor was made it will be valid)
+     * @return true if not end or pointer set beyond bounds
      */
     @Override
     public boolean isValid() {
-        return true;
+        return this.treeOn != null && this.on < 4;
     }
 
+    /**
+     * skips creating a config if there is a singular required move forwards
+     */
+    public void skipRequired() {
+        while (this.treeOn != null) {
+            checkRequired();
+            if (this.on >= 4) {
+                return;
+            }
+            if (this.step == 4) {
+                if (this.validPlace(this.on)) {
+                    int lookRow = this.treeOn.row + dirToRow[this.on * 2];
+                    int lookCol = this.treeOn.col + dirToCol[this.on * 2];
+                    this.board[lookRow][lookCol] = TENT;
+                    this.checkTentsPerRow[lookRow] -= 1;
+                    this.checkTentsPerColumn[lookCol] -= 1;
+                    changeMaxRow(this.treeOn.row, -1);
+                    changeMaxCol(this.treeOn.col, -1);
+                    this.treeOn = this.treeOn.next;
+                } else {
+                    return;
+                }
+            } else {
+                return;
+            }
+        }
+    }
+
+    /**
+     * checks if there is a required move forwards, and where it is
+     */
+    public void checkRequired() {
+        int requiredConstant =
+                this.checkRequiredColumn(this.treeOn.col - 1) +
+                        this.checkRequiredColumn(this.treeOn.col) * 2 +
+                        this.checkRequiredColumn(this.treeOn.col + 1) * 4 +
+                        this.checkRequiredRow(this.treeOn.row - 1) * 8 +
+                        this.checkRequiredRow(this.treeOn.row) * 16 +
+                        this.checkRequiredRow(this.treeOn.row + 1) * 32;
+//        System.out.println(requiredConstant);
+        if (requiredConstant == 0) {
+//            System.out.println("Unconstrained");
+            this.on = 0;
+            this.step = 1;
+            return;
+        }
+        if (requiredConstant == 16) {
+//            System.out.println("Required horizontal");
+            this.on = 1;
+            this.step = 2;
+            return;
+        }
+        if (requiredConstant == 1 || requiredConstant == 17) {
+//            System.out.println("Required left");
+            this.on = 3;
+            this.step = 4;
+            return;
+        }
+        if (requiredConstant == 4 || requiredConstant == 20) {
+//            System.out.println("Required right");
+            this.on = 1;
+            this.step = 4;
+            return;
+        }
+        if (requiredConstant == 2) {
+//            System.out.println("Required vertical");
+            this.on = 0;
+            this.step = 2;
+            return;
+        }
+        if (requiredConstant == 8 || requiredConstant == 10) {
+//            System.out.println("Required up");
+            this.on = 2;
+            this.step = 4;
+            return;
+        }
+        if (requiredConstant == 32 || requiredConstant == 34) {
+//            System.out.println("Required down");
+            this.on = 0;
+            this.step = 4;
+            return;
+        }
+//        System.out.println("Pruned on conflicting necessities");
+        this.on = 4;
+
+    }
+
+
+    /**
+     * checks if it's ok to place in a direction.  Converts direction to
+     * coordinates based on current tree
+     * @param direction direction to look from tree
+     * @return if it's ok to place there
+     */
     public boolean validPlace(int direction) {
+        if ((this.dirRecord / (Math.pow(2, direction))) % 2 == 1) {
+            System.out.println("Tried to place in direction " + direction + " more than once.");
+            return false;
+        }
         int lookRow = this.treeOn.row + dirToRow[direction * 2];
         int lookCol = this.treeOn.col + dirToCol[direction * 2];
         return this.validPlace(lookRow, lookCol);
@@ -291,6 +503,7 @@ public class TentConfig implements Configuration, ITentsAndTreesTest, Collection
      * @return checks if it's ok to place a tent there
      */
     public boolean validPlace(int row, int col) {
+        //System.out.println("Checking place for " + col + ", " + row);
         /* check if inside the board */
         if (0 > row || DIM <= row) {
             return false;
@@ -354,6 +567,7 @@ public class TentConfig implements Configuration, ITentsAndTreesTest, Collection
         for (int i = 0; i < DIM; i++) {
             if (this.checkTentsPerRow[i] != 0 ||
                     this.checkTentsPerColumn[i] != 0) {
+//                System.out.println("Required row/column counts not fulfilled.");
                 return false;
             }
         }
@@ -370,6 +584,43 @@ public class TentConfig implements Configuration, ITentsAndTreesTest, Collection
 
     @Override
     public String toString() {
+        // modified version of getDisplay() specified in ITentsAndTreesTest to
+        // give more data.  Commented out when not in use.
+//        StringBuilder result = new StringBuilder(" ");
+//
+//        // top row, horizontal divider
+//        result.append(String.valueOf(HORI_DIVIDE).repeat(Math.max(0, getDIM() * 2 - 1)));
+//        result.append(System.lineSeparator());
+//
+//        // field rows
+//        for (int row=0; row<getDIM() ; ++row) {
+//            result.append(VERT_DIVIDE);
+//            for (int col = 0; col<getDIM() ; ++col) {
+//                if (col != getDIM() -1) {
+//                    result.append(getCell(row, col)).append(" ");
+//                } else {
+//                    result.append(getCell(row, col)).append(VERT_DIVIDE).append(this.checkTentsPerRow[row]).append(" ").append(this.maxTentsPerRow[row]).append(System.lineSeparator());
+//                }
+//            }
+//        }
+//
+//        // bottom horizontal divider
+//        result.append(" ");
+//        result.append(String.valueOf(HORI_DIVIDE).repeat(Math.max(0, getDIM()  * 2 - 1)));
+//
+//        // bottom row w/ look values for columns
+//        result.append(System.lineSeparator()).append(" ");
+//
+//        for (int col=0; col<getDIM(); ++col) {
+//            result.append(this.checkTentsPerColumn[col]).append(" ");
+//        }
+//        result.append(System.lineSeparator()).append(" ");
+//        for (int col=0; col<getDIM(); ++col) {
+//            result.append(this.maxTentsPerColumn[col]).append(" ");
+//        }
+//        result.append(System.lineSeparator());
+//
+//        return result.toString();
         return getDisplay();
     }
 

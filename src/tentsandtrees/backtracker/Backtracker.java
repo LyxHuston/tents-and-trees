@@ -1,7 +1,7 @@
 package tentsandtrees.backtracker;
 
-import java.util.Collection;
 import java.util.Optional;
+import java.util.Stack;
 
 /**
  * This class represents the classic recursive backtracking algorithm.
@@ -61,21 +61,44 @@ public class Backtracker {
      * @return A solution config, or null if no solution
      */
     public Optional<Configuration> solve(Configuration config) {
+        Stack<TentConfig> configStack = new Stack<>();
+        configStack.push((TentConfig) config);
         configCount++;
-        debugPrint("Current config", config);
-        if (config.isGoal()) {
-            return Optional.of(config);
-        } else {
-            for (TentConfig child : (TentConfig) config) {
-                debugPrint("Valid successor", child);
-                Optional<Configuration> sol = solve(child);
-                if (sol.isPresent()) {
-                    return sol;
-                }
+        while (!configStack.isEmpty()) {
+            TentConfig onConfig = configStack.peek();
+            if (onConfig.isGoal()) {
+                return Optional.of(onConfig);
             }
-            // implicit backtracking happens here
+            if (onConfig.hasNext()) {
+                configStack.push(onConfig.next());
+                configCount++;
+            } else {
+                configStack.pop();
+            }
         }
         return Optional.empty();
+//        configCount++;
+//        if (configCount == 0) { // 30x30 goes over max integer count.  Somehow.
+//            System.out.println("On config " + configCount + System.lineSeparator() + config);
+//        }
+//        debugPrint("Current config", config);
+//        if (config.isGoal()) {
+//            return Optional.of(config);
+//        } else {
+//            if (config.isValid()) {
+//                debugPrint("Valid successor", config);
+//                for (Configuration child : (TentConfig) config) {
+//                    Optional<Configuration> sol = solve(child);
+//                    if (sol.isPresent()) {
+//                        return sol;
+//                    }
+//                }
+//            } else {
+//                debugPrint("Invalid successor", config);
+//            }
+//            // implicit backtracking happens here
+//        }
+//        return Optional.empty();
     }
 
     /**
