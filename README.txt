@@ -6,4 +6,4 @@ Solve a puzzle from a given board according to this set of rules:
 
 This project exceeded greatest speed expectations by a factor of 4285.
 
-Data and output files from school have been completed.  I have never successfully computed a solution to 30x30.
+Data and output files from school have been removed.  I have never successfully computed a solution to 30x30.
